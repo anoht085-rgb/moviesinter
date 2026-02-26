@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gallery</title>
+
+  <!-- Serif for the small editorial labels -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300,400,600&family=Inter:wght@400,500,600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#0a0a0b;
+      --paper:#f7f6f2;
+      --ink:#0e0e10;
+      --muted:rgba(14,14,16,.62);
+      --line:rgba(14,14,16,.18);
+      --line2:rgba(14,14,16,.10);
+      --shadow:0 28px 90px rgba(0,0,0,.35);
+      --radius:22px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      background: var(--bg);
+      color: var(--paper);
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* subtle grain */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.08;
+      mix-blend-mode:overlay;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+      background-size:220px 220px;
+    }
+
+    .wrap{
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 34px 18px 60px;
+      position:relative;
+      z-index:1;
+    }
+
+    /* big background hint (like your reference has image behind) */
+    .backdrop{
+      position:fixed;
+      inset:-20vh -10vw;
+      background:
+        radial-gradient(800px 500px at 25% 30%, rgba(255,90,90,.18), transparent 55%),
+        radial-gradient(900px 600px at 80% 20%, rgba(120,170,255,.18), transparent 55%),
+        radial-gradient(900px 700px at 55% 90%, rgba(255,220,140,.14), transparent 60%),
+        #0a0a0b;
+      filter:saturate(1.05) contrast(1.02);
+      z-index:0;
+    }
+
+    /* WHITE BOARD like the reference */
+    .board{
+      background: var(--paper);
+      color: var(--ink);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.08);
+      overflow:hidden;
+    }
+
+    /* Top strip with thumbnails */
+    .strip{
+      display:flex;
+      gap:10px;
+      padding: 14px 16px;
+      border-bottom:1px solid var(--line2);
+      align-items:center;
+      overflow:auto;
+      scrollbar-width: none;
+    }
+    .strip::-webkit-scrollbar{ display:none; }
+
+    .thumb{
+      width: 58px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--line2);
+      overflow:hidden;
+      background: #eee;
+      flex: 0 0 auto;
+      cursor:pointer;
+      transition: transform .12s ease, border-color .15s ease;
+    }
+    .thumb:hover{
+      transform: translateY(-2px);
+      border-color: var(--line);
+    }
+    .thumb img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+    }
+    .thumb .fallback{
+      width:100%;
+      height:100%;
+      display:grid;
+      place-items:center;
+      font-weight:600;
+      font-size:12px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color: rgba(14,14,16,.55);
+    }
+
+    /* Main interior */
+    .inner{
+      padding: 18px 18px 0;
+      display:grid;
+      grid-template-columns: 240px 1fr;
+      gap: 18px;
+      align-items:start;
+    }
+
+    /* left editorial column */
+    .meta{
+      font-family: "Fraunces", ui-serif, Georgia, serif;
+      color: rgba(14,14,16,.70);
+      line-height: 1.2;
+      padding-top: 6px;
+    }
+    .meta .small{
+      font-size: 13px;
+      letter-spacing:.01em;
+    }
+    .meta em{ font-style: italic; }
+    .meta .tiny{
+      margin-top: 10px;
+      font-family:"Inter", sans-serif;
+      font-size: 11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color: rgba(14,14,16,.45);
+    }
+
+    /* REQUIRED input + button (styled) */
+    .controls{
+      margin-top: 14px;
+      display:flex;
+      gap:10px;
+      align-items:stretch;
+    }
+
+    #charInput{
+      width: 88px;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.75);
+      padding: 10px 12px;
+      font-size: 16px;
+      letter-spacing:.22em;
+      text-transform: uppercase;
+      outline:none;
+      font-family:"Inter", sans-serif;
+    }
+    #charInput:focus{
+      box-shadow: 0 0 0 4px rgba(0,0,0,.08);
+    }
+
+    #submitButton{
+      height: 44px;
+      padding: 0 14px;
+      border-radius: 14px;
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+      cursor:pointer;
+      font-size: 12px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+    }
+    #submitButton:hover{ opacity:.92; }
+
+    #status{
+      min-height: 16px;
+      margin-top: 10px;
+      font-family:"Inter", sans-serif;
+      font-size: 12px;
+      color: rgba(14,14,16,.55);
+    }
+
+    /* right: featured image frame */
+    .feature{
+      border: 1px solid var(--line2);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,.55);
+    }
+
+    #displayedImage{
+      display:none; /* mandatory */
+      width:100%;
+      max-height: 520px;
+      object-fit: contain;
+      border-radius: 14px;
+      border: 1px solid var(--line2);
+      background: #fff;
+    }
+
+    #caption{
+      display:none;
+      margin-top: 12px;
+      border-top: 1px solid var(--line2);
+      padding-top: 10px;
+      font-family:"Inter", sans-serif;
+      color: rgba(14,14,16,.78);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    /* giant word */
+    .bigword{
+      padding: 8px 18px 16px;
+      border-top: 1px solid var(--line2);
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .bigword h2{
+      margin:0;
+      font-size: clamp(52px, 9vw, 132px);
+      line-height: .86;
+      letter-spacing:-.02em;
+      font-weight: 800;
+      font-family:"Inter", sans-serif;
+    }
+    .bigword .rightnote{
+      font-family:"Inter", sans-serif;
+      font-size: 11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color: rgba(14,14,16,.42);
+      white-space:nowrap;
+      align-self:flex-end;
+      padding-bottom: 8px;
+    }
+
+    @media (max-width: 900px){
+      .inner{ grid-template-columns: 1fr; }
+      .meta{ padding-top:0; }
+      .bigword{ flex-direction:column; align-items:flex-start; }
+      .bigword .rightnote{ align-self:flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="board">
+      <!-- Thumbnails -->
+      <div class="strip" id="thumbStrip" aria-label="Poster thumbnails"></div>
+
+      <div class="inner">
+        <!-- Left editorial column -->
+        <aside class="meta">
+          <div class="small">
+            <div>Movies</div>
+            <div><em>Posters</em></div>
+            <div>Selection</div>
+          </div>
+
+          <div class="tiny">Type one letter (A–Z)</div>
+
+          <!-- REQUIRED INPUT + BUTTON -->
+          <div class="controls">
+            <input type="text" id="charInput" maxlength="1" placeholder="A" aria-label="Enter a letter A to Z">
+            <button id="submitButton" type="button">Show</button>
+          </div>
+
+          <div id="status" role="status" aria-live="polite"></div>
+        </aside>
+
+        <!-- Right feature -->
+        <section class="feature" aria-label="Featured poster">
+          <img id="displayedImage" src="" alt="">
+          <div id="caption"></div>
+        </section>
+      </div>
+
+      <!-- Big type like the reference -->
+      <div class="bigword">
+        <h2>MOVIES</h2>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    const movies = {
+      A: { title: "American Psycho" },
+      B: { title: "Before Sunrise" },
+      C: { title: "Challengers" },
+      D: { title: "Dead Poets Society" },
+      E: { title: "Eternal Sunshine of the Spotless Mind" },
+      F: { title: "The Florida Project" },
+      G: { title: "The Grand Budapest Hotel" },
+      H: { title: "How to Lose a Guy in 10 Days" },
+      I: { title: "In the Mood for Love" },
+      J: { title: "Joker" },
+      K: { title: "Kill Bill" },
+      L: { title: "Love Actually" },
+      M: { title: "Marie Antoinette" },
+      N: { title: "Notting Hill" },
+      O: { title: "Ocean's 8" },
+      P: { title: "Pretty Woman" },
+      Q: { title: "Quiet Place" },
+      R: { title: "Ratatouile" },
+      S: { title: "Shutter Island" },
+      T: { title: "The Wolf of Wall Street" },
+      U: { title: "Uptown Girls" },
+      V: { title: "The Virgin Suicides" },
+      W: { title: "Wuthering Heights" },
+      X: { title: "X-men: First Class" },
+      Y: { title: "Your Name" },
+      Z: { title: "Zodiac" }
+    };
+
+    const inputEl = document.getElementById("charInput");
+    const btnEl = document.getElementById("submitButton");
+    const imgEl = document.getElementById("displayedImage");
+    const statusEl = document.getElementById("status");
+    const captionEl = document.getElementById("caption");
+    const stripEl = document.getElementById("thumbStrip");
+
+    function setStatus(msg, isError=false){
+      statusEl.textContent = msg;
+      statusEl.style.color = isError ? "rgba(200,0,0,.75)" : "rgba(14,14,16,.55)";
+    }
+
+    function showLetter(letter){
+      const info = movies[letter];
+      const path = `images/${letter}.jpeg`;
+
+      imgEl.onload = () => {
+        imgEl.style.display = "block";
+        captionEl.style.display = "block";
+        captionEl.innerHTML = `<strong>${letter}</strong> — ${info.title}`;
+        setStatus("");
+      };
+
+      imgEl.onerror = () => {
+        imgEl.style.display = "none";
+        captionEl.style.display = "none";
+        setStatus(`Missing file: ${path}`, true);
+      };
+
+      imgEl.src = path;
+      imgEl.alt = info.title;
+    }
+
+    function displayMovie(){
+      const letter = (inputEl.value || "").trim().toUpperCase();
+
+      if (!letter || letter.length !== 1 || !alphabet.includes(letter)) {
+        imgEl.style.display = "none";
+        captionEl.style.display = "none";
+        imgEl.src = "";
+        setStatus("Enter a single letter A–Z.", true);
+        inputEl.focus();
+        return;
+      }
+
+      showLetter(letter);
+    }
+
+    // REQUIRED: button triggers output
+    btnEl.addEventListener("click", displayMovie);
+
+    // (Nice UX) Enter key works too
+    inputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") displayMovie();
+    });
+
+    // Keep input uppercase 1 char
+    inputEl.addEventListener("input", () => {
+      inputEl.value = inputEl.value.toUpperCase().slice(0,1);
+      setStatus("");
+    });
+
+    // Build thumbnail strip (optional extra; still compliant)
+    for (const ch of alphabet){
+      const t = document.createElement("div");
+      t.className = "thumb";
+      t.title = `${ch} — ${movies[ch].title}`;
+
+      const im = document.createElement("img");
+      im.src = `images/${ch}.jpeg`;
+      im.alt = `${movies[ch].title} thumbnail`;
+      im.loading = "lazy";
+      im.onerror = () => {
+        // fallback if that image is missing
+        t.innerHTML = `<div class="fallback">${ch}</div>`;
+      };
+
+      t.appendChild(im);
+
+      t.addEventListener("click", () => {
+        inputEl.value = ch;
+        showLetter(ch);
+      });
+
+      stripEl.appendChild(t);
+    }
+  </script>
+</body>
+</html>
